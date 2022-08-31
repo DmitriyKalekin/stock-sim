@@ -13,7 +13,7 @@ class Order(BaseModel):
     type: EnumOrderType
     price: condecimal(gt=0, decimal_places=2)
     volume: condecimal(gt=0, decimal_places=6)
-    status: EnumOrderStatus = EnumOrderStatus.ACTIVE
+    status: EnumOrderStatus = EnumOrderStatus.CREATED
 
     class Config:
         orm_mode = True
@@ -27,7 +27,7 @@ class Order(BaseModel):
                 "type": EnumOrderType.BID,
                 "price": 35.04,
                 "volume": 13.02,
-                "status": EnumOrderStatus.ACTIVE
+                "status": EnumOrderStatus.CREATED
             }
         }
 

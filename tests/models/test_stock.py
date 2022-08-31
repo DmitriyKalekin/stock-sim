@@ -12,9 +12,9 @@ def test_execute_matching_orders__last_bid_closes_2__success(stock):
     # ----- BIDS -----
     bid = stock.add_order({**cmn, "type": EnumOrderType.BID, "price": 650, "volume": 250})
     assert ask.volume == 100
-    assert ask.status == EnumOrderStatus.ACTIVE
+    assert ask.status == EnumOrderStatus.CREATED
     assert bid.volume == 50
-    assert bid.status == EnumOrderStatus.ACTIVE
+    assert bid.status == EnumOrderStatus.EXECUTED
     assert stock.order_book.asks == [ask]
     assert stock.order_book.bids == [bid]
     assert stock.price == 600
@@ -29,7 +29,7 @@ def test_execute_matching_orders__last_bid_lt__success(stock):
     # ----- BIDS -----
     bid = stock.add_order({**cmn, "type": EnumOrderType.BID, "price": 650, "volume": 1})
     assert ask.volume == 129
-    assert ask.status == EnumOrderStatus.ACTIVE
+    assert ask.status == EnumOrderStatus.EXECUTED
     assert bid.volume == 0
     assert bid.status == EnumOrderStatus.CLOSED
     assert stock.order_book.asks == [ask]
@@ -65,7 +65,7 @@ def test_execute_matching_orders__last_bid_gt__success(stock):
     assert ask.volume == 0
     assert ask.status == EnumOrderStatus.CLOSED
     assert bid.volume == 10
-    assert bid.status == EnumOrderStatus.ACTIVE
+    assert bid.status == EnumOrderStatus.EXECUTED
     assert stock.order_book.asks == []
     assert stock.order_book.bids == [bid]
     assert stock.price == 500
@@ -80,7 +80,7 @@ def test_execute_matching_orders__last_ask_gt__success(stock):
     # ----- ASKS -----
     ask = stock.add_order({**cmn, "type": EnumOrderType.ASK, "price": 500, "volume": 130})
     assert ask.volume == 129
-    assert ask.status == EnumOrderStatus.ACTIVE
+    assert ask.status == EnumOrderStatus.EXECUTED
     assert bid.volume == 0
     assert bid.status == EnumOrderStatus.CLOSED
     assert stock.order_book.asks == [ask]
@@ -116,7 +116,7 @@ def test_execute_matching_orders__last_ask_lt__success(stock):
     assert ask.volume == 0
     assert ask.status == EnumOrderStatus.CLOSED
     assert bid.volume == 10
-    assert bid.status == EnumOrderStatus.ACTIVE
+    assert bid.status == EnumOrderStatus.EXECUTED
     assert stock.order_book.asks == []
     assert stock.order_book.bids == [bid]
     assert stock.price == 500

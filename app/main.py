@@ -33,23 +33,4 @@ async def app_startup():
     asyncio.create_task(ticks_generator())
     return
 
-# ==================================== PLAYER =====================================
-# @app.post("/player", tags=["player"])
-# async def create_player():
-#     return {"message": "Hello World"}
-#
-# @app.get("/player/{id}", tags=["player"])
-# async def get_player_by_id(id: int):
-#     return {"message": "Hello World"}
-#
-# @app.get("/players", tags=["player"])
-# async def get_players():
-#     return {"message": "Hello World"}
-#
-# @app.put("/player/{id}", tags=["player"])
-# async def update_player_by_id(id: int):
-#     return {"message": "Hello World"}
-#
-# @app.delete("/player/{id}", tags=["player"])
-# async def delete_player_by_id(id: int):
-#     return {"message": "Hello World"}
+

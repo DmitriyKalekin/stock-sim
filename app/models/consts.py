@@ -18,8 +18,8 @@ class EnumOrderType(str, Enum):
 
 
 class EnumOrderStatus(str, Enum):
-    ACTIVE = "ACTIVE"  # размещен
-    PAID = "PAID"  # частично оплачен
+    CREATED = "CREATED"  # размещен
+    EXECUTED = "EXECUTED"  # частично оплачен
     CLOSED = "CLOSED"  # полностью оплачен
 
     # CANCELED = "CANCELED"

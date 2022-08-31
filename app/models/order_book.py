@@ -1,13 +1,12 @@
 from app.models.dao.dao_order import Order
 from app.models.consts import EnumOrderClass, EnumOrderType, EnumOrderStatus
-import numpy as np
+
 
 
 class OrderBook:
     def __init__(self, t):
         self.t = t
         self.last_id = 0
-        self.market: list[Order] = []
         self.bids: list[Order] = []  # OrderedDict better
         self.asks: list[Order] = []  # OrderedDict better
 

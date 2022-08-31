@@ -2,7 +2,7 @@ from app.models.order_book import OrderBook
 from app.models.players_crowd import PlayersCrowd
 from app.models.dao.dao_order import Order
 from app.models.consts import EnumOrderType, EnumOrderClass, EnumOrderStatus
-import numpy as np
+
 
 # instance of stock
 stock_sigleton = None
@@ -37,7 +37,8 @@ class Stock:
         sign = 1 if order.type == EnumOrderType.BID else -1
         closed = []
         for contr_order in book:
-            if np.sign(contr_order.price - order.price) == sign:
+            sign2 = 1 if contr_order.price - order.price >= 0 else -1
+            if sign2 == sign:
                 break
             # По этой цене пока совершается сделка -
             self.price = min(contr_order.price, order.price)
@@ -45,7 +46,10 @@ class Stock:
             if d >= 0:
                 # Сможем за один контр-ордер из стакана погасить наш новый ордер?
                 self.volume += order.volume
+                #  этот ордер частично погашен
                 contr_order.set_volume(d)
+                contr_order.set_status(EnumOrderStatus.EXECUTED)
+                #  а наш полностью
                 order.set_status(EnumOrderStatus.CLOSED)
                 order.set_volume(0)
                 closed.append(order)
@@ -57,7 +61,10 @@ class Stock:
             else:
                 # Не сможем, будем выскребать по нескольку ордеров в стакане
                 self.volume += contr_order.volume
+                # Наш ордер частично погашен
+                order.set_status(EnumOrderStatus.EXECUTED)
                 order.set_volume(-d)
+                # А в стакане - полностью закрыт
                 contr_order.set_volume(0)
                 contr_order.set_status(EnumOrderStatus.CLOSED)
                 closed.append(contr_order)

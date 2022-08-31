@@ -19,6 +19,11 @@ __bu_last_release/
 **/*/*.jpg
 svc-app/app/tools/*/*.jpg
 
+.idea
+.coderage
+.pytest_cache
+venv/
+
 
 # Distribution / packaging
 .Python
