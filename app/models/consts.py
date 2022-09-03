@@ -1,15 +1,15 @@
 from enum import Enum
 
 
-class EnumOrderClass(str, Enum):
-    LIMIT = "LIMIT"
+class OrderEClass(str, Enum):
     MARKET = "MARKET"
+    OTHER = "OTHER"
 
     def __repr__(self):
         return self.value  # pragma: no cover
 
 
-class EnumOrderType(str, Enum):
+class OrderEType(str, Enum):
     BID = "BID"
     ASK = "ASK"
 
@@ -17,10 +17,11 @@ class EnumOrderType(str, Enum):
         return self.value  # pragma: no cover
 
 
-class EnumOrderStatus(str, Enum):
+class OrderEStatus(str, Enum):
     CREATED = "CREATED"  # размещен
     EXECUTED = "EXECUTED"  # частично оплачен
     CLOSED = "CLOSED"  # полностью оплачен
+    ERROR = "ERROR"  # Не смогли исполнить (нет объема)
 
     # CANCELED = "CANCELED"
 

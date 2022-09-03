@@ -4,3 +4,4 @@ pydantic
 loguru
 pytest
 requests
+pytest-coverage

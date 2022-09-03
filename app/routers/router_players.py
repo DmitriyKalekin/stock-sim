@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from app.routers.dto import res as response
-from app.routers.dto.player import res_player, req_player
+from app.dto import response as response
+import app.dto.player.res as res
+import app.dto.player.req as req
 from fastapi import status
 from app.models.stock import Stock
 
@@ -13,27 +14,27 @@ router = APIRouter(
 )
 
 
-@router.post("/player", response_model=res_player.PlayerId, status_code=status.HTTP_201_CREATED)
-async def add_player(player: req_player.PlayerBase):
+@router.post("/player", response_model=res.PlayerId, status_code=status.HTTP_201_CREATED)
+async def add_player(player: req.PlayerBase):
     global stock
     player_id = stock.add_player(player.dict())
-    return res_player.PlayerId(**{"player_id": player_id})
+    return res.PlayerId(**{"player_id": player_id})
 
 
-@router.get("/player/{player_id}", response_model=res_player.Player)
+@router.get("/player/{player_id}", response_model=res.Player)
 async def get_player_by_id(player_id: str):
     global stock
     player = stock.get_player_by_id(player_id)
     if not player:
         return JSONResponse(status_code=404, content={"message": f"player_id=`{player_id}` not found"})
-    return res_player.Player.from_orm(player)
+    return res.Player.from_orm(player)
 
 
-@router.get("/players", response_model=res_player.PlayersCollection)
+@router.get("/players", response_model=res.PlayersCollection)
 async def get_players():
     global stock
     players = stock.get_players()
-    return res_player.PlayersCollection(**players)
+    return res.PlayersCollection(**players)
 
 
 @router.delete("/player/{player_id}", status_code=status.HTTP_204_NO_CONTENT)

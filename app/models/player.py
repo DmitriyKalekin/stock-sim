@@ -1,6 +1,6 @@
 import random
 from pydantic import BaseModel, Field, validator, condecimal
-from app.models.consts import EnumOrderType
+from app.models.consts import OrderEType
 
 # class AgentsCollection:
 #     def __init__(self, stock):

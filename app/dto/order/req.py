@@ -1,12 +1,11 @@
 from pydantic import BaseModel, Field, validator, condecimal
-from app.models.consts import EnumOrderClass, EnumOrderType
+from app.models.consts import OrderEClass, OrderEType
 
 
 class OrderBase(BaseModel):
     player_id: str
-    cls: EnumOrderClass
-    type: EnumOrderType
-    price: condecimal(gt=0, decimal_places=2) = None
+    type: OrderEType
+    price: condecimal(gt=0, decimal_places=2) | OrderEClass = OrderEClass.MARKET
     volume: condecimal(gt=0, decimal_places=6)
 
     class Config:
@@ -14,8 +13,7 @@ class OrderBase(BaseModel):
         schema_extra = {
             "example": {
                 "player_id": "0001",
-                "cls": EnumOrderClass.LIMIT,
-                "type": EnumOrderType.BID,
+                "type": OrderEType.BID,
                 "price": 35.04,
                 "volume": 13.02,
             }

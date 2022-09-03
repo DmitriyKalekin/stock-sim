@@ -1,6 +1,5 @@
-from app.models.dao.dao_order import Order
-from app.models.consts import EnumOrderClass, EnumOrderType, EnumOrderStatus
-
+from app.dto.order.res import Order
+from app.models.consts import OrderEClass, OrderEType, OrderEStatus
 
 
 class OrderBook:
@@ -14,34 +13,38 @@ class OrderBook:
         self.last_id += 1
         return str(self.last_id).zfill(12)
 
-    def _sort_order_book(self, page=None):
-        if not page or page == EnumOrderType.BID:
+    def _sort_order_book(self, book: OrderEType = None):
+        if not book or book == OrderEType.BID:
             self.bids = sorted(self.bids, key=lambda order: (-order.price, order.ts))
 
-        if not page or page == EnumOrderType.BID:
+        if not book or book == OrderEType.ASK:
             self.asks = sorted(self.asks, key=lambda order: (order.price, order.ts))
         return
 
-    def add_order(self, order_dict: dict) -> Order:
-        order = Order(
-            order_id=self.get_new_id(),
-            ts=self.t,
-            **order_dict,
-        )
-        # if order.cls == EnumOrderClass.MARKET:
-        #     self.market.append(order)
-        #     return order
+    def add_order(self, order: Order):
+        if order.price == OrderEClass.MARKET:
+            raise ValueError(f"cannot add market order to book {order}")
+        storage_to_put = self.bids if order.type == OrderEType.BID else self.asks
+        storage_to_put.append(order)
+        self._sort_order_book(book=order.type)
+        return
 
-        if order.cls == EnumOrderClass.LIMIT:
-            storage_to_put = self.bids if order.type == EnumOrderType.BID else self.asks
-            storage_to_put.append(order)
-            self._sort_order_book(page=order.type)
-        return order
+    def select_matching(self, order: Order) -> tuple[list[Order], float]:
+        book = self.asks if order.type == OrderEType.BID else self.bids
+        selected_volume = 0
+        selected_orders = []
+        for book_order in book:
+            if order.price != OrderEClass.MARKET:
+                if (order.type == OrderEType.BID and book_order.price > order.price) or (
+                        order.type == OrderEType.ASK and book_order.price < order.price):
+                    continue
+            selected_volume += book_order.volume
+            selected_orders.append(book_order)
+            if selected_volume >= order.volume:
+                break
+        return selected_orders, selected_volume
 
     def get_order(self, order_id: str) -> Order | bool:
-        # markets_filter = [m for m in self.market if m.order_id == order_id]
-        # if markets_filter:
-        #     return markets_filter[0]
         bids_filter = [bid for bid in self.bids if bid.order_id == order_id]
         if bids_filter:
             return bids_filter[0]
@@ -63,13 +66,9 @@ class OrderBook:
         order = self.get_order(order_id)
         if not bool(order):
             return False
-        # if order.cls == EnumOrderClass.MARKET:
-        #     self.market = [m for m in self.market if m.order_id != order_id]
-        #     return True
-        # -- LIMIT orders must be sorted ----
-        if order.type == EnumOrderType.BID:
+        if order.type == OrderEType.BID:
             self.bids = [bid for bid in self.bids if bid.order_id != order_id]
-        elif order.type == EnumOrderType.ASK:
+        elif order.type == OrderEType.ASK:
             self.asks = [ask for ask in self.asks if ask.order_id != order_id]
-        self._sort_order_book(page=order.type)
+        self._sort_order_book(book=order.type)
         return True
