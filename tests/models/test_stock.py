@@ -1,5 +1,5 @@
 from app.models.consts import OrderEClass, OrderEType, OrderEStatus
-from app.models.stock import MarketOrderNotExecutableException
+from app.models.order_book import MarketOrderNotExecutableException
 import pytest
 
 
@@ -12,7 +12,7 @@ def test_execute_matching_orders__market_order_closed__success(stock):
     stock.create_order({**cmn, "type": OrderEType.ASK, "price": 500, "volume": 100})
     # ----- BIDS -----
     bid = stock.create_order(
-        {"player_id": player_id, "type": OrderEType.BID, "price": OrderEClass.MARKET, "volume": 300})
+        {**cmn, "type": OrderEType.BID, "price": OrderEClass.MARKET, "volume": 300})
     assert ask.volume == 0
     assert ask.status == OrderEStatus.CLOSED
     assert bid.volume == 0

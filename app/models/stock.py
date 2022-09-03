@@ -2,16 +2,16 @@ from app.models.order_book import OrderBook
 from app.models.players_crowd import PlayersCrowd
 from app.dto.order.res import Order
 from app.models.consts import OrderEType, OrderEClass, OrderEStatus
+from pydantic import BaseModel, Field, validator, condecimal
+import decimal
+
 
 # instance of stock
 stock_sigleton = None
 
 
+
 class PlayerNotExistException(Exception):
-    pass
-
-
-class MarketOrderNotExecutableException(Exception):
     pass
 
 
@@ -19,11 +19,15 @@ class MarketOrderNotExecutableException(Exception):
 class Stock:
     def __init__(self):
         self.t = 0
-        self.order_book = OrderBook(self.t)  # Composition
+        self.order_book = OrderBook(self)  # Composition
         self.players_crowd = PlayersCrowd(self.t)
-        self.price = 20_000
+        self.price = 0
         self.volume = 0
         self.min_bet_usdt = 10
+        self.ohlc_history = dict()
+        self.volume_history = dict()
+        self.fee = 0.05 * 0.01
+        self.earn = 0
 
     @classmethod
     def get_singleton_instance(cls):
@@ -35,50 +39,41 @@ class Stock:
     # def on_tick(self, t):
     #     self.t = t
 
-    def execute_matching_orders(self, order: Order) -> bool:
-        book, covered_volume = self.order_book.select_matching(order)
-        if order.price == OrderEClass.MARKET and covered_volume < order.volume:
-            order.set_status(OrderEStatus.ERROR)
-            msg = f"Market volume `{covered_volume}` less than order.volume = `{order.volume}`"
-            raise MarketOrderNotExecutableException(msg)
+    def on_orders_executed(self, order1: Order, order2: Order, price, volume):
+        player1 = self.players_crowd.get_player_by_id(order1.player_id)
+        player2 = self.players_crowd.get_player_by_id(order2.player_id)
 
-        closed = []
-        for contr_order in book:
-            # По этой цене пока совершается сделка -
-            if order.price == OrderEClass.MARKET:
-                self.price = contr_order.price
-            else:
-                self.price = min(contr_order.price, order.price)
-            d = contr_order.volume - order.volume
-            if d >= 0:
-                # Сможем за один контр-ордер из стакана погасить наш новый ордер?
-                self.volume += order.volume
-                #  этот ордер частично погашен
-                contr_order.set_volume(d)
-                contr_order.set_status(OrderEStatus.EXECUTED)
-                #  а наш полностью
-                order.set_status(OrderEStatus.CLOSED)
-                order.set_volume(0)
-                closed.append(order)
-                if d == 0:
-                    # Мы случайно угадали с объемом - закрыли еще и ордер их книги
-                    contr_order.set_status(OrderEStatus.CLOSED)
-                    closed.append(contr_order)
-                break
-            else:
-                # Не сможем, будем выскребать по нескольку ордеров в стакане
-                self.volume += contr_order.volume
-                # Наш ордер частично погашен
-                order.set_status(OrderEStatus.EXECUTED)
-                order.set_volume(-d)
-                # А в стакане - полностью закрыт
-                contr_order.set_volume(0)
-                contr_order.set_status(OrderEStatus.CLOSED)
-                closed.append(contr_order)
-        # чистим то, что выполнено
-        for del_ordr in closed:
-            a = self.delete_order(del_ordr.order_id)
-        return True
+        money = volume * price
+        self.earn = money * decimal.Decimal(self.fee)
+        self.price = price
+        self.volume = volume + decimal.Decimal(self.volume)
+        money -= self.earn
+
+        if order1.type == OrderEType.BID:
+            player1.asset += volume
+            player1.money -= money
+            player2.asset -= volume
+            player2.money += money
+        elif order1.type == OrderEType.ASK:
+            player1.asset -= volume
+            player1.money += money
+            player2.asset += volume
+            player2.money -= money
+
+        self.update_ohlc_history(price)
+        self.update_volume_history(volume)
+
+    def update_ohlc_history(self, price):
+        if self.t not in self.ohlc_history:
+            self.ohlc_history[self.t] = {"t": self.t, "Open": price, "High": price, "Low": price, "Close": price}
+        self.ohlc_history[self.t]["Close"] = price
+        self.ohlc_history[self.t]["High"] = max(price, self.ohlc_history[self.t]["High"])
+        self.ohlc_history[self.t]["Low"] = min(price, self.ohlc_history[self.t]["High"])
+
+    def update_volume_history(self, volume):
+        if self.t not in self.volume_history:
+            self.volume_history[self.t] = {"t": self.t, "Volume": 0}
+        self.volume_history[self.t]["Volume"] += volume
 
     # ------- Order book Composition methods (Delegation) -------------
     def create_order(self, order_dict: dict) -> Order:
@@ -87,25 +82,7 @@ class Stock:
         player = self.players_crowd.get_player_by_id(player_id)
         if not bool(player):
             raise PlayerNotExistException(f"Can't place order. Unknown Player with player_id=`{player_id}` not found")
-        order = Order(
-            order_id=self.order_book.get_new_id(),
-            player_id=player.player_id,
-            ts=self.t,
-            type=order_dict["type"],
-            price=order_dict["price"],
-            volume=order_dict["volume"],
-            volume_start=order_dict["volume"],
-            status=OrderEStatus.CREATED,
-        )
-        self.execute_matching_orders(order)
-        # Рыночные ордера мы не можем добавить в книгу
-        if order.price == OrderEClass.MARKET:
-            return order
-        # Если ордер исполнен в руке - в книгу тоже не добавляется
-        if order.status not in [OrderEStatus.CREATED, OrderEStatus.EXECUTED]:
-            return order
-        self.order_book.add_order(order)
-        return order
+        return self.order_book.create_order(order_dict, player_id)
 
     def get_order(self, order_id: str):
         return self.order_book.get_order(order_id)

@@ -25,6 +25,8 @@ from app.models.consts import OrderEType
 class Player(BaseModel):
     player_id: str
     name: str
+    asset: float = 0
+    money: float = 0
 
 
 
